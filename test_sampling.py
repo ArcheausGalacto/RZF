@@ -11,7 +11,7 @@ from numpy.polynomial.chebyshev import Chebyshev
 mp.mp.prec = 200   # High precision
 T = 50
 num_points = 20000  # Increase for more stable results
-N = 100             # Number of basis functions
+N = 500             # Number of basis functions
 alpha = 0.01        # Gaussian width
 lambda_reg = 1e-3   # Regularization factor
 
@@ -29,21 +29,6 @@ def xi(s):
 t_values = [i*(2*T/num_points)-T for i in range(num_points)]
 xi_values = [xi(0.5+1j*t) for t in t_values]
 xi_real = np.array([float(x.real) for x in xi_values])
-
-#####################
-# Basis 1: Gaussian-modulated cosines
-#####################
-def G_cos(t, n, alpha=0.01):
-    return np.exp(-alpha*t*t)*np.cos(2*np.pi*n*t)
-
-#####################
-# Basis 2: Hermite-based
-# Hermite polynomial H_n(x) from mpmath.hermite
-# Hermite function: e^{-alpha*t^2} * H_n(sqrt(alpha)*t)
-#####################
-def G_hermite(t, n, alpha=0.01):
-    # hermite poly from mpmath
-    return float(mp.hermite(n, mp.mpf(np.sqrt(alpha)*t)))*np.exp(-alpha*t*t)
 
 #####################
 # Basis 3: Chebyshev polynomials on [-T,T]
@@ -95,12 +80,6 @@ def run_approximation(name, basis_func):
 #####################
 # Run All Three Approaches
 #####################
-
-# 1. Gaussian-modulated cosines
-run_approximation("Gaussian-cosine", lambda t, n: G_cos(t, n+1, alpha)) # n+1 since originally defined from 1..N
-
-# 2. Hermite-based
-run_approximation("Hermite", lambda t, n: G_hermite(t, n, alpha))
 
 # 3. Chebyshev polynomials
 run_approximation("Chebyshev", G_cheb)
