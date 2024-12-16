@@ -8,7 +8,7 @@ from scipy.signal import find_peaks
 mp.dps = 20  # High precision for the zeta function
 
 # Parameters
-initial_harmonics = 10  # Initial number of harmonics
+initial_harmonics = 100  # Initial number of harmonics
 n_points = 2**22        # FFT resolution
 sigma = 0.5             # Gaussian width parameter
 alpha = 1.0             # Scaling for Gaussian decay
@@ -33,11 +33,23 @@ def compute_fft_and_peaks(x, harmonics):
     combined = cp.zeros_like(x)
     for freq in harmonics:
         combined += gaussian_series(x, sigma, alpha) * cosine_component(x, freq)
+    
+    # Compute FFT
     fft_result = cp.fft.fftshift(cp.fft.fft(combined))
     fft_magnitude = cp.abs(fft_result)
     frequencies = cp.fft.fftshift(cp.fft.fftfreq(n_points, d=(x[1] - x[0])))
-    peaks, _ = find_peaks(cp.asnumpy(fft_magnitude), height=np.max(fft_magnitude) * 0.01)
-    return frequencies, fft_magnitude, peaks
+    
+    # Convert to numpy for peak detection
+    fft_magnitude_cpu = cp.asnumpy(fft_magnitude)
+    frequencies_cpu = cp.asnumpy(frequencies)
+    
+    # Adaptive threshold for peak detection
+    height_threshold = np.percentile(fft_magnitude_cpu, 90)  # Top 10% peaks
+    peaks, _ = find_peaks(fft_magnitude_cpu, height=height_threshold, distance=50)
+    
+    return frequencies_cpu, fft_magnitude_cpu, peaks
+
+
 
 # Step 3: Iterative Refinement
 x = cp.linspace(-50, 50, n_points)  # Imaginary axis values
