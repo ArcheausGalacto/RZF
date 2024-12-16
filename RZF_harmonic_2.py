@@ -7,7 +7,7 @@ import time
 mp.mp.prec = 100
 
 # Number of zeros (data points) to use
-M = 5
+M = 10
 gamma_values = np.array([float(zetazero(k).imag) for k in range(1, M+1)])
 
 # Desired target values at these points, say all ones
