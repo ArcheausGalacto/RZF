@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Canvas Plot</title>
+<style>
+  body { background: #f0f0f0; }
+  #plotCanvas { background: #ffffff; display: block; margin: 20px auto; border: 1px solid #000; }
+  .label {
+    font: 10px sans-serif;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="plotCanvas" width="800" height="400"></canvas>
+
+<script>
+// Define constants
+const GoldenRatio = (1 + Math.sqrt(5)) / 2;
+const Catalan = 0.915965594177219015054539885866; // known constant
+// We'll use Math.cos, Math.log, etc. from JavaScript's Math library
+
+// Define the function f(x) = ((cos(x)/(x+GoldenRatio)) / ((GoldenRatio+x)+log(Catalan))).
+// We must ensure x+GoldenRatio and the denominator are not zero.
+function f(x) {
+  const denominator = ((GoldenRatio + x) + Math.log(Catalan));
+  if (x + GoldenRatio === 0 || denominator === 0) return NaN;
+  return (Math.cos(x) / (x + GoldenRatio)) / denominator;
+}
+
+// Non-trivial RZF zeros imaginary parts
+const t_values = [
+  14.1347251417,
+  21.0220396388,
+  25.0108575801,
+  30.4248761259,
+  32.9350615877,
+  37.5861781588,
+  40.9187190121,
+  43.3270732809,
+  48.0051508812,
+  49.7738324777
+];
+
+// Generate data
+const xMin = 0;
+const xMax = 55;
+const numPoints = 2000;
+const dx = (xMax - xMin) / (numPoints - 1);
+
+let X = [];
+let Y = [];
+for (let i = 0; i < numPoints; i++) {
+  let xVal = xMin + i * dx;
+  let yVal = f(xVal);
+  X.push(xVal);
+  Y.push(yVal);
+}
+
+// Filter out invalid values
+let finiteYs = Y.filter(y => Number.isFinite(y));
+let yMin = Math.min(...finiteYs);
+let yMax = Math.max(...finiteYs);
+
+// Add some margin
+const marginFactor = 0.1;
+let yRange = yMax - yMin;
+if (yRange === 0) yRange = 1; 
+yMin -= yRange * marginFactor;
+yMax += yRange * marginFactor;
+
+// Set up the canvas
+const canvas = document.getElementById('plotCanvas');
+const ctx = canvas.getContext('2d');
+const width = canvas.width;
+const height = canvas.height;
+
+// Map function: convert from data coords to canvas coords
+function xToCanvas(xVal) {
+  return (xVal - xMin) / (xMax - xMin) * width;
+}
+function yToCanvas(yVal) {
+  return height - (yVal - yMin) / (yMax - yMin) * height;
+}
+
+// Clear
+ctx.fillStyle = '#fff';
+ctx.fillRect(0,0,width,height);
+
+// Draw axes
+// x-axis at y=0 if 0 in range, else center if needed
+const xAxisYVal = (0 < yMin || 0 > yMax) ? yMin : 0;
+const yAxisXVal = (0 < xMin || 0 > xMax) ? xMin : 0;
+
+// Draw x-axis
+if (yMin < 0 && yMax > 0) {
+  let yAxis = yToCanvas(0);
+  ctx.strokeStyle = '#000';
+  ctx.beginPath();
+  ctx.moveTo(0, yAxis);
+  ctx.lineTo(width, yAxis);
+  ctx.stroke();
+}
+
+// Draw y-axis
+if (xMin < 0 && xMax > 0) {
+  let xAxis = xToCanvas(0);
+  ctx.strokeStyle = '#000';
+  ctx.beginPath();
+  ctx.moveTo(xAxis, 0);
+  ctx.lineTo(xAxis, height);
+  ctx.stroke();
+}
+
+// Plot the function
+ctx.strokeStyle = 'blue';
+ctx.lineWidth = 1;
+ctx.beginPath();
+let started = false;
+for (let i = 0; i < numPoints; i++) {
+  if (!Number.isFinite(Y[i])) continue;
+  let cx = xToCanvas(X[i]);
+  let cy = yToCanvas(Y[i]);
+  if (!started) {
+    ctx.moveTo(cx, cy);
+    started = true;
+  } else {
+    ctx.lineTo(cx, cy);
+  }
+}
+ctx.stroke();
+
+// Mark RZF zero lines
+ctx.strokeStyle = 'red';
+ctx.lineWidth = 1;
+ctx.setLineDash([5,5]);
+for (let t of t_values) {
+  let cx = xToCanvas(t);
+  ctx.beginPath();
+  ctx.moveTo(cx, 0);
+  ctx.lineTo(cx, height);
+  ctx.stroke();
+}
+ctx.setLineDash([]);
+
+// Plot points at f(t)
+ctx.fillStyle = 'red';
+ctx.font = '10px sans-serif';
+for (let t of t_values) {
+  let val = f(t);
+  if (!Number.isFinite(val)) continue;
+  let cx = xToCanvas(t);
+  let cy = yToCanvas(val);
+  
+  // Draw the point
+  ctx.beginPath();
+  ctx.arc(cx, cy, 3, 0, 2*Math.PI);
+  ctx.fill();
+
+  // Draw label
+  ctx.fillText(val.toFixed(4), cx, cy - 5);
+}
+
+// Add a title
+ctx.fillStyle = '#000';
+ctx.font = '14px sans-serif';
+ctx.fillText('Best Found Function vs RZF Zero Approximations', 20, 20);
+
+ctx.fillText('y = ((cos(x)/(x+GoldenRatio)) / ((GoldenRatio+x)+log(Catalan)))', 20, 40);
+</script>
+
+</body>
+</html>
