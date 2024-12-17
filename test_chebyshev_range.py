@@ -6,7 +6,7 @@ from numpy.polynomial.chebyshev import chebvander
 mp.mp.prec = 200    # High precision for mpmath
 T = 50
 num_points = 20000
-lambda_reg = 1e-6
+lambda_reg = 1e-9
 
 def xi(s):
     return mp.zeta(s)*0.5*s*(s-1)*mp.pi**(-s/2)*mp.gamma(s/2)

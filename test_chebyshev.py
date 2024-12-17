@@ -12,7 +12,7 @@ mp.mp.prec = 200    # High precision
 T = 50              # Interval for t in [-T,T]
 num_points = 20000  # Increase for large tests
 N = 1000             # Polynomial degree (N terms means degree N-1)
-lambda_reg = 1e-6   # Regularization factor (can try 0, 1e-6, 1e-9, etc.)
+lambda_reg = 1e-9   # Regularization factor (can try 0, 1e-6, 1e-9, etc.)
 
 #####################
 # Define xi(s)
